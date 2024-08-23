@@ -1,13 +1,3 @@
-# openai-go-sdk
-
-## Installation
-Use go get to install SDK：
-```shell
-go get github.com/shenhaofang/openai-go-sdk
-```
-
-## Usage
-```go
 package main
 
 import (
@@ -149,5 +139,3 @@ func main() {
 	// Print the response text
 	fmt.Println(res)
 }
-
-```
