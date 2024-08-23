@@ -25,44 +25,6 @@ const (
 	DefaultIdleConnTimeout     = 20 * time.Minute
 )
 
-
-// 查询图片描述
-func (dao *imgDescDao) GetImgDesc(ctx context.Context, imgURLs map[int]string) (map[int]string, error) {
-			subBatchJob.UserMsgContents = append(subBatchJob.UserMsgContents, )
-
-			// 请求ai大模型
-			chatParam := openai.OpenAIChatParam{
-				Model: "qwen-vl-plus",
-				Message: []openai.Message{
-					{
-						Role:    openai.RoleSystem,
-						Content: openai.TextContent("你是一个图片内容描述助手，图文创作者将用你提供的图片描述进行创作"),
-					},
-					{
-						Role:    openai.RoleUser,
-						Content: subBatchJob.UserMsgContents,
-					},
-				},
-				TopP: 0.1,
-			}
-			
-			log.WithCtxFields(ctx, log.Fields{
-				"param": chatParam,
-				"res":   resChat,
-			}).Debugln("[AI-qwen-vl-plus]get img desc from ai")
-			if resChat != nil && resChat.Error != nil {
-				log.WithCtxFields(ctx, log.Fields{
-					"error": resChat.Error.Error(),
-				}).Errorln("[AI-qwen-vl-plus]get img desc from ai error")
-				jobErr = err
-				return
-			}
-			// 解析返回结果
-			subBatchJob.Res = dao.ParseAiChatResp(subBatchJob.ImgObjList, resChat)
-		}(job)
-	}
-}
-
 func main() {
 	// Create a new client
 	aiClient: openai.NewAIClient(conf.GlobalConfig.AiImgDealer.Key, conf.GlobalConfig.AiImgDealer.BaseURL, openai.ClientDefaultParamOption{
