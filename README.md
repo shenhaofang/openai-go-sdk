@@ -13,6 +13,7 @@ go get github.com/shenhaofang/openai-go-sdk
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -150,6 +151,84 @@ func main() {
 	}
 	// Print the response text
 	fmt.Println(res)
+
+	/**
+	 * file upload request
+	 */
+	fileText := bytes.NewReader([]byte(`《侠客行》 - 李白
+
+	赵客缦胡缨，吴钩霜雪明。银鞍照白马，飒沓如流星。
+
+	十步杀一人，千里不留行。事了拂衣去，深藏身与名。
+
+	闲过信陵饮，脱剑膝前横。将炙啖朱亥，持觞劝侯嬴。
+
+	三杯吐然诺，五岳倒为轻。眼花耳热后，意气素霓生。
+
+	救赵挥金锤，邯郸先震惊。千秋二壮士，烜赫大梁城。
+
+	纵死侠骨香，不惭世上英。谁能书阁下，白首太玄经。`))
+
+	// make chat request
+	fileInfo, err := aiClient.UpdateFile("files", openai.OpenAIFileCreateParam{
+		File:     fileText,
+		FileName: "test.txt",
+		Purpose:  "file-extract",
+	})
+	if err != nil {
+		log.Fatalf("Error get msg from ai resp: %v", err)
+		return
+	}
+	fmt.Println(fileInfo)
+
+	fileInfo2, err := aiClient.RetrieveFile("files", fileInfo.ID)
+	if err != nil {
+		log.Fatalf("Error get msg from ai resp: %v", err)
+		return
+	}
+	fmt.Println(fileInfo2)
+
+	// 请求ai大模型
+	chatParam = openai.OpenAIChatParam{
+		Model: "qwen-long",
+		Message: []openai.Message{
+			{
+				Role:    openai.RoleSystem,
+				Content: openai.TextContent("你是一个文档小助手，辅助用户完成文档解读"),
+			},
+			{
+				Role:    openai.RoleSystem,
+				Content: openai.TextContent("fileid://" + fileInfo.ID),
+			},
+			{
+				Role:    openai.RoleUser,
+				Content: openai.TextContent("这都写了点啥？给说说呗！"),
+			},
+		},
+		TopP: 0.3,
+	}
+
+	// make chat request
+	aiChatReq, err = aiClient.MakeChatRequest("chat/completions", chatParam)
+	if err != nil {
+		log.Fatalf("Error creating request: %v", err)
+		return
+	}
+	// send msg to ai
+	aiChatResp, err = aiChatReq.GetResp(ctx)
+	if err != nil {
+		log.Fatalf("Error get resp: %v", err)
+		return
+	}
+
+	// get ai response
+	resChat, err = aiChatResp.Get()
+	if err != nil {
+		log.Fatalf("Error get msg from ai resp: %v", err)
+		return
+	}
+	// Print the response content
+	fmt.Println(resChat.Choices[0].Message.Content)
 }
 
 ```

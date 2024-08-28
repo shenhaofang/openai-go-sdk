@@ -3,7 +3,11 @@ package openai
 import (
 	"bufio"
 	"context"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -56,6 +60,59 @@ type OpenAIChatParam struct {
 	PresencePenalty  float64  `json:"presence_penalty"`
 	Seed             uint64   `json:"seed,omitempty"`
 	User             string   `json:"user,omitempty"`
+}
+
+type OpenAIFileCreateParam struct {
+	File     io.Reader `json:"file"`
+	FileName string    `json:"file_name"`
+	Purpose  string    `json:"purpose"`
+	writer   *multipart.Writer
+}
+
+func (p *OpenAIFileCreateParam) buildMultipartWriter(body io.Writer) error {
+	p.writer = multipart.NewWriter(body)
+	if p.Purpose == "" {
+		return errors.New("purpose is required")
+	}
+	err := p.writer.WriteField("purpose", p.Purpose)
+	if err != nil {
+		return err
+	}
+	if p.File == nil && p.FileName != "" {
+		fileData, err := os.Open(p.FileName)
+		if err != nil {
+			return err
+		}
+		defer fileData.Close()
+		p.File = fileData
+	}
+	if p.File == nil {
+		return errors.New("file is required")
+	}
+	w, err := p.writer.CreateFormFile("file", path.Base(p.FileName))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(w, p.File)
+	if err != nil {
+		return err
+	}
+
+	err = p.writer.Close()
+
+	return err
+}
+
+// https://platform.openai.com/docs/api-reference/files/object
+type FileInfo struct {
+	ID            string `json:"id"`             // The file identifier, which can be referenced in the API endpoints.
+	Bytes         int    `json:"bytes"`          // The size of the file, in bytes.
+	CreatedAt     int64  `json:"created_at"`     //The Unix timestamp (in seconds) for when the file was created.
+	FileName      string `json:"filename"`       // The name of the file.
+	Object        string `json:"object"`         // The object type, which is always file.
+	Purpose       string `json:"purpose"`        // The intended purpose of the file. Supported values are assistants, assistants_output, batch, batch_output, fine-tune, fine-tune-results and vision.
+	Status        string `json:"status"`         // Deprecated
+	StatusDetails string `json:"status_details"` // Deprecated
 }
 
 type Message struct {

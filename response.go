@@ -48,6 +48,11 @@ type RespAIChatStream struct {
 	Error               *AIError             `json:"error,omitempty"`
 }
 
+type FileResp struct {
+	FileInfo
+	Error *AIError `json:"error,omitempty"`
+}
+
 type FinishReason string
 
 // https://platform.openai.com/docs/api-reference/chat/object
