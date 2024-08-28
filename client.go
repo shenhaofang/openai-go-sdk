@@ -148,7 +148,7 @@ func (c *AIClient) RetrieveFile(method string, fileID string) (*FileInfo, error)
 	return &res.FileInfo, err
 }
 
-func (c *AIClient) MakeChatRequest(method string, param OpenAIChatParam) (*AIRequest, error) {
+func (c *AIClient) MakeChatReqBytes(param OpenAIChatParam) (reqByts []byte, err error) {
 	if param.Model == "" {
 		param.Model = "gpt-3.5-turbo-0301" //gpt-3.5-turbo or gpt-3.5-turbo-0301
 	}
@@ -182,9 +182,17 @@ func (c *AIClient) MakeChatRequest(method string, param OpenAIChatParam) (*AIReq
 	if param.PresencePenalty > 2 || param.PresencePenalty < (-2) {
 		param.PresencePenalty = 0.6
 	}
-	reqByts, err := json.Marshal(param)
+	reqByts, err = json.Marshal(param)
 	if err != nil {
 		err = errors.Wrap(err, "[ai_client]marshal open ai request error")
+		return nil, err
+	}
+	return reqByts, nil
+}
+
+func (c *AIClient) MakeChatRequest(method string, param OpenAIChatParam) (*AIRequest, error) {
+	reqByts, err := c.MakeChatReqBytes(param)
+	if err != nil {
 		return nil, err
 	}
 
