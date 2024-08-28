@@ -160,18 +160,20 @@ func (r *RespOpenAI) Recv() (*RespAIChatStream, error) {
 	if !r.IsStream {
 		return nil, errors.New("[ai_resp]resp is not stream")
 	}
-	// TODO stream reader no time to test
 	emptyLineCount := 0
 	for {
 		rawLine, err := r.respReader.ReadBytes('\n')
-		if err != nil {
+		if err != nil && err != io.EOF {
 			return nil, errors.Wrap(err, "[ai_resp]read line failed")
 		}
 		noSpaceLine := bytes.TrimSpace(rawLine)
 		if bytes.HasPrefix(noSpaceLine, errorPrefix) {
+			if err != nil {
+				return nil, errors.Wrap(err, string(noSpaceLine))
+			}
 			return nil, errors.New(string(noSpaceLine))
 		}
-		if !bytes.HasPrefix(noSpaceLine, dataPrefix) {
+		if !bytes.HasPrefix(noSpaceLine, dataPrefix) && err != io.EOF {
 			emptyLineCount++
 			if emptyLineCount > r.EmptyMsgLineLimit {
 				return nil, errors.New("[ai_resp]empty line count exceed limit")
@@ -183,10 +185,15 @@ func (r *RespOpenAI) Recv() (*RespAIChatStream, error) {
 			return res, io.EOF
 		}
 
-		err = json.Unmarshal(noPrefixLine, res)
-		if err != nil {
-			return nil, errors.Wrap(err, "[ai_resp]unmarshal resp stream line failed")
+		unmarshalErr := json.Unmarshal(noPrefixLine, res)
+		if unmarshalErr != nil && err != io.EOF {
+			return nil, errors.Wrap(unmarshalErr, "[ai_resp]unmarshal resp stream line failed")
 		}
+
+		if err == io.EOF {
+			return res, io.EOF
+		}
+
 		return res, nil
 	}
 }

@@ -1,5 +1,7 @@
 # openai-go-sdk
 
+OpenAI Docs API Reference: https://platform.openai.com/docs/api-reference/introduction
+
 ## Installation
 Use go get to install SDK：
 ```shell
