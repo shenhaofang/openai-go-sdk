@@ -1,6 +1,6 @@
 module github.com/shenhaofang/openai-go-sdk
 
-go 1.18.0
+go 1.18
 
 require (
 	github.com/json-iterator/go v1.1.12
