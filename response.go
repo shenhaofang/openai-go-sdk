@@ -160,6 +160,10 @@ func (r *RespOpenAI) Get() (*RespAIChat, error) {
 	return res, nil
 }
 
+func (r *RespOpenAI) HttpStatus() int {
+	return r.httpResp.StatusCode
+}
+
 func (r *RespOpenAI) Recv() (*RespAIChatStream, error) {
 	res := new(RespAIChatStream)
 	if !r.IsStream {
