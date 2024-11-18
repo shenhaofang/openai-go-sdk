@@ -6,8 +6,10 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
+	"strconv"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -101,6 +103,30 @@ func (p *OpenAIFileCreateParam) buildMultipartWriter(body io.Writer) error {
 	err = p.writer.Close()
 
 	return err
+}
+
+type OpenAIListFilesParam struct {
+	Purpose string
+	Limit   int
+	Order   string
+	After   string
+}
+
+func (o OpenAIListFilesParam) ToQuery() string {
+	vals := make(url.Values, 4)
+	if o.Purpose != "" {
+		vals.Set("purpose", o.Purpose)
+	}
+	if o.Limit != 0 {
+		vals.Set("limit", strconv.Itoa(o.Limit))
+	}
+	if o.Order != "" {
+		vals.Set("order", o.Order)
+	}
+	if o.After != "" {
+		vals.Set("after", o.After)
+	}
+	return vals.Encode()
 }
 
 // https://platform.openai.com/docs/api-reference/files/object

@@ -53,6 +53,21 @@ type FileResp struct {
 	Error *AIError `json:"error,omitempty"`
 }
 
+type ListFilesResp struct {
+	Data     []FileInfo `json:"data"`
+	Object   string     `json:"object"`
+	NextPage int        `json:"next_page"`
+	HasMore  bool       `json:"has_more"`
+	Error    *AIError   `json:"error,omitempty"`
+}
+
+type DeleteFileResp struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Deleted bool   `json:"deleted"`
+	Error   *AIError
+}
+
 type FinishReason string
 
 // https://platform.openai.com/docs/api-reference/chat/object

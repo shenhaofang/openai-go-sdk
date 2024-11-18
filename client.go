@@ -109,6 +109,44 @@ func (c *AIClient) UpdateFile(method string, param OpenAIFileCreateParam) (*File
 	return &res.FileInfo, err
 }
 
+func (c *AIClient) ListFiles(param OpenAIListFilesParam) (*ListFilesResp, error) {
+	query := param.ToQuery()
+	if query != "" {
+		query = "?" + query
+	}
+	url := c.BaseURL + "/files" + query
+
+	// 发送请求
+	httpReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_client]make request to send msg error")
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+c.Key)
+	// req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15")
+
+	res := new(ListFilesResp)
+	httpResp, err := c.client.Do(httpReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_client]send request to send msg error")
+	}
+	defer httpResp.Body.Close()
+	bodyBytes, err := io.ReadAll(httpResp.Body)
+	// fmt.Println(string(bodyBytes))
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_resp]read resp body failed")
+	}
+	err = json.Unmarshal(bodyBytes, res)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_resp]unmarshal resp body failed")
+	}
+
+	if res.Error != nil {
+		return res, errors.New(res.Error.Message)
+	}
+
+	return res, err
+}
+
 func (c *AIClient) RetrieveFile(method string, fileID string) (*FileInfo, error) {
 	if fileID == "" {
 		return nil, errors.New("[ai_client]file id is empty")
@@ -146,6 +184,44 @@ func (c *AIClient) RetrieveFile(method string, fileID string) (*FileInfo, error)
 	}
 
 	return &res.FileInfo, err
+}
+
+func (c *AIClient) DeleteFile(fileID string) (*DeleteFileResp, error) {
+	if fileID == "" {
+		return nil, errors.New("[ai_client]file id is empty")
+	}
+	url := c.BaseURL + "/files/" + fileID
+
+	// 发送请求
+	httpReq, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_client]make request to send msg error")
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+c.Key)
+	// req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15")
+
+	res := new(DeleteFileResp)
+
+	httpResp, err := c.client.Do(httpReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_client]send request to send msg error")
+	}
+	defer httpResp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_resp]read resp body failed")
+	}
+	err = json.Unmarshal(bodyBytes, res)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ai_resp]unmarshal resp body failed")
+	}
+
+	if res.Error != nil {
+		return res, errors.New(res.Error.Message)
+	}
+
+	return res, err
 }
 
 func (c *AIClient) MakeChatReqBytes(param OpenAIChatParam) (reqByts []byte, err error) {

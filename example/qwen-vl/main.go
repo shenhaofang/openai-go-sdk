@@ -176,6 +176,16 @@ func main() {
 	}
 	fmt.Println(fileInfo2)
 
+	fileListResp, err := aiClient.ListFiles(openai.OpenAIListFilesParam{
+		Limit: 10,
+		Order: "desc",
+	})
+	if err != nil {
+		log.Fatalf("Error fileList request: %v", err)
+		return
+	}
+	fmt.Println(fileListResp)
+
 	// 请求ai大模型
 	chatParam = openai.OpenAIChatParam{
 		Model: "qwen-long",
@@ -217,4 +227,11 @@ func main() {
 	}
 	// Print the response content
 	fmt.Println(resChat.Choices[0].Message.Content)
+
+	delFileResp, err := aiClient.DeleteFile(fileInfo.ID)
+	if err != nil {
+		log.Fatalf("Error delete file request: %v", err)
+		return
+	}
+	fmt.Println(delFileResp)
 }
