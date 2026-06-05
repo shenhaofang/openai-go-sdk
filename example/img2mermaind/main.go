@@ -1,19 +1,6 @@
-# openai-go-sdk
-
-OpenAI Docs API Reference: https://platform.openai.com/docs/api-reference/introduction
-
-## Installation
-Use go get to install SDK：
-```shell
-go get github.com/shenhaofang/openai-go-sdk
-```
-
-## Usage
-```go
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -60,8 +47,28 @@ func main() {
 		Model: "qwen-vl-plus",
 		Message: []openai.Message{
 			{
-				Role:    openai.RoleSystem,
-				Content: openai.TextContent("你是一个图片解析助手"),
+				Role: openai.RoleSystem,
+				Content: openai.TextContent(`# 角色
+你是一个智能流程图转换工具，可以将用户提交的流程图图片准确地转换为 mermaid 语法表示。
+
+## 技能
+### 技能 1：转换流程图图片为 mermaid 语法
+1. 当用户提供流程图图片时，仔细分析图片中的各个元素和流程走向。
+2. 使用图像识别技术和相关算法，将流程图中的节点、连线和标签等信息提取出来。
+3. 将提取出的信息按照 mermaid 语法的规则进行转换，生成对应的代码。回复示例：
+=====` +
+					"```" + `mermaid
+graph TD;
+    A[开始] --> B[步骤 1];
+    B --> C[步骤 2];
+    C --> D[结束];
+` + "```" + `
+=====
+
+## 限制：
+- 只处理流程图图片转换为 mermaid 语法的任务，拒绝回答与该任务无关的问题。
+- 所输出的内容必须按照给定的格式进行组织，不能偏离框架要求。
+- 确保转换的准确性和完整性。`),
 			},
 			{
 				Role: openai.RoleUser,
@@ -69,18 +76,33 @@ func main() {
 					openai.UserImgContent{
 						Type: "image_url",
 						ImageURL: openai.ImgURL{
-							URL: "https://wxls-cms.oss-cn-hangzhou.aliyuncs.com/online/2024-04-18/218da022-f4bf-456a-99af-5cb8e157f7b8.jpg",
-						},
-					},
-					openai.UserImgContent{
-						Type: "image_url",
-						ImageURL: openai.ImgURL{
-							URL: "https://dashscope.oss-cn-beijing.aliyuncs.com/images/dog_and_girl.jpeg",
+							URL: "",
 						},
 					},
 					openai.UserTextContent{
 						Type: "text",
-						Text: `请问这些图片里边都是啥？`,
+						Text: `# 角色
+你是一个智能流程图转换工具，可以将用户提交的流程图图片准确地转换为 mermaid 语法表示。
+
+## 技能
+### 技能 1：转换流程图图片为 mermaid 语法
+1. 当用户提供流程图图片时，仔细分析图片中的各个元素和流程走向。
+2. 使用图像识别技术和相关算法，将流程图中的节点、连线和标签等信息提取出来。
+3. 将提取出的信息按照 mermaid 语法的规则进行转换，生成对应的代码。回复示例：
+=====` +
+							"```" + `mermaid
+graph TD;
+    A[开始] --> B[步骤 1];
+    B --> C[步骤 2];
+    C --> D[结束];
+` + "```" + `
+=====
+
+## 限制：
+- 只处理流程图图片转换为 mermaid 语法的任务，拒绝回答与该任务无关的问题。
+- 所输出的内容必须按照给定的格式进行组织，不能偏离框架要求。
+- 确保转换的准确性和完整性。
+请将这张图片准确地转换为 mermaid 语法表示`,
 					},
 				},
 			},
@@ -151,84 +173,4 @@ func main() {
 	}
 	// Print the response text
 	fmt.Println(res)
-
-	/**
-	 * file upload request
-	 */
-	fileText := bytes.NewReader([]byte(`《侠客行》 - 李白
-
-	赵客缦胡缨，吴钩霜雪明。银鞍照白马，飒沓如流星。
-
-	十步杀一人，千里不留行。事了拂衣去，深藏身与名。
-
-	闲过信陵饮，脱剑膝前横。将炙啖朱亥，持觞劝侯嬴。
-
-	三杯吐然诺，五岳倒为轻。眼花耳热后，意气素霓生。
-
-	救赵挥金锤，邯郸先震惊。千秋二壮士，烜赫大梁城。
-
-	纵死侠骨香，不惭世上英。谁能书阁下，白首太玄经。`))
-
-	// make chat request
-	fileInfo, err := aiClient.UpdateFile("files", openai.OpenAIFileCreateParam{
-		File:     fileText,
-		FileName: "test.txt",
-		Purpose:  "file-extract",
-	})
-	if err != nil {
-		log.Fatalf("Error get msg from ai resp: %v", err)
-		return
-	}
-	fmt.Println(fileInfo)
-
-	fileInfo2, err := aiClient.RetrieveFile("files", fileInfo.ID)
-	if err != nil {
-		log.Fatalf("Error get msg from ai resp: %v", err)
-		return
-	}
-	fmt.Println(fileInfo2)
-
-	// 请求ai大模型
-	chatParam = openai.OpenAIChatParam{
-		Model: "qwen-long",
-		Message: []openai.Message{
-			{
-				Role:    openai.RoleSystem,
-				Content: openai.TextContent("你是一个文档小助手，辅助用户完成文档解读"),
-			},
-			{
-				Role:    openai.RoleSystem,
-				Content: openai.TextContent("fileid://" + fileInfo.ID),
-			},
-			{
-				Role:    openai.RoleUser,
-				Content: openai.TextContent("这都写了点啥？给说说呗！"),
-			},
-		},
-		TopP: 0.3,
-	}
-
-	// make chat request
-	aiChatReq, err = aiClient.MakeChatRequest("chat/completions", chatParam)
-	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
-		return
-	}
-	// send msg to ai
-	aiChatResp, err = aiChatReq.GetResp(ctx)
-	if err != nil {
-		log.Fatalf("Error get resp: %v", err)
-		return
-	}
-
-	// get ai response
-	resChat, err = aiChatResp.Get()
-	if err != nil {
-		log.Fatalf("Error get msg from ai resp: %v", err)
-		return
-	}
-	// Print the response content
-	fmt.Println(resChat.Choices[0].Message.Content)
 }
-
-```
