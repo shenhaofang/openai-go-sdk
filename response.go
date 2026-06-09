@@ -31,6 +31,35 @@ type AIError struct {
 	Param   interface{} `json:"param"`
 }
 
+func (e *AIError) UnmarshalJSON(input []byte) error {
+	var raw struct {
+		Code    json.RawMessage `json:"code"`
+		Type    string          `json:"type"`
+		Message string          `json:"message"`
+		Param   interface{}     `json:"param"`
+	}
+	if err := json.Unmarshal(input, &raw); err != nil {
+		return err
+	}
+	e.Type = raw.Type
+	e.Message = raw.Message
+	e.Param = raw.Param
+	e.Code = parseAIErrorCode(raw.Code)
+	return nil
+}
+
+func parseAIErrorCode(raw json.RawMessage) string {
+	codeBytes := bytes.TrimSpace(raw)
+	if len(codeBytes) == 0 || bytes.Equal(codeBytes, []byte("null")) {
+		return ""
+	}
+	var code string
+	if err := json.Unmarshal(codeBytes, &code); err == nil {
+		return code
+	}
+	return string(codeBytes)
+}
+
 func (e *AIError) Error() string {
 	return fmt.Sprintf("Error[%s]: %s(type:%s, param:%v)", e.Code, e.Message, e.Type, e.Param)
 }

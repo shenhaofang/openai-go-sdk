@@ -84,6 +84,35 @@ func TestRespAIResponseGetAndOutputText(t *testing.T) {
 	}
 }
 
+func TestRespAIResponseGetParsesNumericErrorCode(t *testing.T) {
+	resp := &RespOpenAIResponse{
+		httpResp: &http.Response{
+			Body: io.NopCloser(strings.NewReader(`{
+				"error": {
+					"code": 502,
+					"message": "upstream returned 403",
+					"status": "Bad Gateway"
+				},
+				"request_id": "chatptrsp-96e74f32fc834fc4abd7d604f79d26d6"
+			}`)),
+		},
+	}
+
+	got, err := resp.Get()
+	if err != nil {
+		t.Fatalf("Get returned error: %v", err)
+	}
+	if got.Error == nil {
+		t.Fatal("error should be parsed")
+	}
+	if got.Error.Code != "502" {
+		t.Fatalf("error code = %q, want 502", got.Error.Code)
+	}
+	if got.Error.Message != "upstream returned 403" {
+		t.Fatalf("error message = %q", got.Error.Message)
+	}
+}
+
 func TestRespOpenAIResponseRecvParsesSemanticEvents(t *testing.T) {
 	stream := strings.Join([]string{
 		"event: response.created",
@@ -141,6 +170,28 @@ func TestRespOpenAIResponseRecvParsesSemanticEvents(t *testing.T) {
 
 	if _, err := resp.Recv(); err != io.EOF {
 		t.Fatalf("final Recv error = %v, want io.EOF", err)
+	}
+}
+
+func TestRespOpenAIResponseRecvParsesNumericErrorCode(t *testing.T) {
+	resp := &RespOpenAIResponse{
+		IsStream: true,
+		respReader: bufio.NewReader(strings.NewReader(strings.Join([]string{
+			"event: error",
+			`data: {"type":"error","code":502,"message":"bad gateway","param":null,"sequence_number":1}`,
+			"",
+		}, "\n"))),
+	}
+
+	event, err := resp.Recv()
+	if err != nil {
+		t.Fatalf("Recv returned error: %v", err)
+	}
+	if event.Error == nil {
+		t.Fatal("event error should be parsed")
+	}
+	if event.Error.Code != "502" {
+		t.Fatalf("event error code = %q, want 502", event.Error.Code)
 	}
 }
 
