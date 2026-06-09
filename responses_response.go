@@ -232,7 +232,7 @@ func (e *RespAIResponseStreamEvent) UnmarshalJSON(input []byte) error {
 		Text           string          `json:"text,omitempty"`
 		Response       *RespAIResponse `json:"response,omitempty"`
 		Error          *AIError        `json:"error,omitempty"`
-		Code           string          `json:"code,omitempty"`
+		Code           json.RawMessage `json:"code,omitempty"`
 		Message        string          `json:"message,omitempty"`
 		Param          interface{}     `json:"param,omitempty"`
 	}
@@ -249,9 +249,9 @@ func (e *RespAIResponseStreamEvent) UnmarshalJSON(input []byte) error {
 	e.Response = base.Response
 	e.Error = base.Error
 	e.Raw = append(e.Raw[:0], input...)
-	if e.Error == nil && (base.Type == "error" || base.Code != "" || base.Message != "") {
+	if e.Error == nil && (base.Type == "error" || len(base.Code) > 0 || base.Message != "") {
 		e.Error = &AIError{
-			Code:    base.Code,
+			Code:    parseAIErrorCode(base.Code),
 			Type:    base.Type,
 			Message: base.Message,
 			Param:   base.Param,
