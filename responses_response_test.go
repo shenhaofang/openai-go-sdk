@@ -113,6 +113,32 @@ func TestRespAIResponseGetParsesNumericErrorCode(t *testing.T) {
 	}
 }
 
+func TestRespOpenAIResponseHTTPMetadata(t *testing.T) {
+	header := make(http.Header)
+	header.Set("http_x_reqid", "chatptrsp-test")
+	resp := &RespOpenAIResponse{
+		httpResp: &http.Response{
+			StatusCode: http.StatusBadRequest,
+			Header:     header,
+		},
+	}
+
+	if got := resp.HttpStatus(); got != http.StatusBadRequest {
+		t.Fatalf("HttpStatus() = %d, want %d", got, http.StatusBadRequest)
+	}
+	if got := resp.HttpHeader("http_x_reqid"); got != "chatptrsp-test" {
+		t.Fatalf("HttpHeader() = %q, want chatptrsp-test", got)
+	}
+
+	var nilResp *RespOpenAIResponse
+	if got := nilResp.HttpStatus(); got != 0 {
+		t.Fatalf("nil HttpStatus() = %d, want 0", got)
+	}
+	if got := nilResp.HttpHeader("http_x_reqid"); got != "" {
+		t.Fatalf("nil HttpHeader() = %q, want empty", got)
+	}
+}
+
 func TestRespOpenAIResponseRecvParsesSemanticEvents(t *testing.T) {
 	stream := strings.Join([]string{
 		"event: response.created",
