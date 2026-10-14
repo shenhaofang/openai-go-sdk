@@ -202,10 +202,17 @@ func (r *RespOpenAIResponse) Get() (*RespAIResponse, error) {
 }
 
 func (r *RespOpenAIResponse) HttpStatus() int {
-	if r.httpResp == nil {
+	if r == nil || r.httpResp == nil {
 		return 0
 	}
 	return r.httpResp.StatusCode
+}
+
+func (r *RespOpenAIResponse) HttpHeader(key string) string {
+	if r == nil || r.httpResp == nil {
+		return ""
+	}
+	return r.httpResp.Header.Get(key)
 }
 
 type RespAIResponseStreamEvent struct {
